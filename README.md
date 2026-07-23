@@ -134,7 +134,7 @@ The app is completely production-ready and optimized for free-tier hosting!
 3. Connect your GitHub repository.
 4. Render will auto-detect Python. Make sure these settings are applied:
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+   - **Start Command**: `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT`
 5. Scroll down to **Environment Variables** and add all your variables from your `.env` file (leave `ALLOWED_ORIGINS` empty for a moment).
    - Also add `PYTHON_VERSION` with a value of `3.11` to ensure it builds perfectly.
 6. Click **Create Web Service**. Wait for the build to finish, and copy your live URL (e.g., `https://ai-interview-backend.onrender.com`).
