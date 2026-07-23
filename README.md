@@ -128,20 +128,25 @@ uvicorn backend.main:app --reload
 
 The app is completely production-ready and optimized for free-tier hosting!
 
-### 1. Deploy the Backend (Railway)
-1. Go to [Railway](https://railway.app/) and create a new project from your GitHub repository.
-2. Railway will automatically detect the Python environment and use the `Procfile` to run the app.
-3. In the Railway dashboard, go to the **Variables** tab and paste all variables from your `.env` file (leaving `ALLOWED_ORIGINS` empty for a moment).
-4. Go to **Settings > Networking > Generate Domain**. Copy this domain.
+### 1. Deploy the Backend (Render)
+1. Go to [Render.com](https://render.com/) and sign up.
+2. Click **New +** and select **Web Service**.
+3. Connect your GitHub repository.
+4. Render will auto-detect Python. Make sure these settings are applied:
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
+5. Scroll down to **Environment Variables** and add all your variables from your `.env` file (leave `ALLOWED_ORIGINS` empty for a moment).
+   - Also add `PYTHON_VERSION` with a value of `3.11` to ensure it builds perfectly.
+6. Click **Create Web Service**. Wait for the build to finish, and copy your live URL (e.g., `https://ai-interview-backend.onrender.com`).
 
 ### 2. Deploy the Frontend (Vercel)
 1. Go to [Vercel](https://vercel.com/) and import your GitHub repository.
 2. Under "Framework Preset", ensure **Vite** is selected.
 3. Set the **Root Directory** to `frontend`.
-4. In Environment Variables, add `VITE_API_URL` and paste your Railway backend domain (e.g. `https://my-backend.up.railway.app`).
+4. In Environment Variables, add `VITE_API_URL` and paste your Render backend domain.
 5. Click **Deploy**.
 
 ### 3. Finalize Connection
-Take the Vercel URL you were just given (e.g., `https://my-frontend.vercel.app`) and paste it into the `ALLOWED_ORIGINS` environment variable in your Railway dashboard.
+Take the Vercel URL you were just given (e.g., `https://my-frontend.vercel.app`), go back to your **Render Web Service -> Environment**, and paste it into the `ALLOWED_ORIGINS` variable. Restart the Render service.
 
 That's it! Your AI Interview Copilot is fully live on the internet. 🚀
