@@ -8,8 +8,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+_embeddings = None
 VECTOR_SIZE = 384  # all-MiniLM-L6-v2 output dimension
+
+def get_embeddings():
+    global _embeddings
+    if _embeddings is None:
+        logger.info("Loading HuggingFace embeddings model into RAM...")
+        _embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    return _embeddings
 
 client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
 
@@ -33,7 +40,7 @@ def index_resume(session_id: str, documents: list):
 
     QdrantVectorStore.from_documents(
         chunks,
-        embeddings,
+        get_embeddings(),
         url=QDRANT_URL,
         api_key=QDRANT_API_KEY,
         collection_name=collection_name,
@@ -46,6 +53,6 @@ def get_retriever(session_id: str):
     vectorstore = QdrantVectorStore(
         client=client,
         collection_name=collection_name,
-        embedding=embeddings,
+        embedding=get_embeddings(),
     )
     return vectorstore.as_retriever(search_kwargs={"k": 4})
