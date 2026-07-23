@@ -96,6 +96,88 @@ AI_Interview_Copilot/
 
 ---
 
+## 🔄 Pipeline Flow
+
+```text
+1. UPLOAD
+   User uploads resume.pdf + job description text
+         ↓
+   PyPDFLoader parses PDF → List[Document]
+         ↓
+   RecursiveCharacterTextSplitter chunks text (500 chars, 50 overlap)
+         ↓
+   Google Gemini (text-embedding-004) embeds chunks → 768-dim vectors
+         ↓
+   Qdrant Cloud stores vectors (collection: "resume_{session_id}")
+         ↓
+   session_id returned to frontend
+
+2. GENERATE QUESTIONS
+   Frontend sends session_id + num_questions
+         ↓
+   Qdrant Cloud retrieves 4 most relevant resume chunks (RAG)
+         ↓
+   Groq LLM (Llama 3.3-70B) generates N questions as JSON array
+         ↓
+   Questions stored in Upstash Redis session, returned to frontend
+
+3. INTERVIEW SESSION
+   ┌─── TEXT MODE ───────────────────────────────────┐
+   │  Question displayed on screen                   │
+   │  User types answer → POST /submit-answer        │
+   └─────────────────────────────────────────────────┘
+   ┌─── VOICE MODE ──────────────────────────────────┐
+   │  GET /question-audio → gTTS → .mp3 played       │
+   │  User speaks → audio recorded in browser        │
+   │  POST /transcribe → Groq Whisper API → text     │
+   │  POST /submit-answer with transcribed text      │
+   └─────────────────────────────────────────────────┘
+
+4. EVALUATE
+   All (question, answer) pairs sent to evaluation chain
+         ↓
+   For each pair: Qdrant Cloud retrieves relevant resume context (RAG)
+         ↓
+   Groq LLM scores each answer (1-10) with:
+     - Strengths
+     - What was missing
+     - Ideal answer outline
+         ↓
+   Final report generated:
+     - Overall score
+     - Top 3 strengths
+     - Top 3 improvement areas
+     - Skills gap analysis
+     - Hiring recommendation
+```
+
+---
+
+## 🔑 Why RAG?
+
+RAG (Retrieval-Augmented Generation) is used in two critical places:
+
+**Question Generation:** Instead of dumping the entire resume into the prompt (expensive, noisy), RAG retrieves only the 4 most relevant chunks (e.g., "ML skills", "Python projects") so questions are targeted and specific.
+
+**Evaluation:** When scoring an answer about "machine learning experience", RAG fetches the exact ML sections from the resume. The LLM can then compare what the user *said* vs. what they *claimed on the resume* — giving grounded, fair feedback.
+
+---
+
+## 🌐 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/health` | Health check |
+| `POST` | `/api/upload/` | Upload resume + job description |
+| `POST` | `/api/interview/generate-questions` | Generate tailored questions |
+| `GET` | `/api/interview/question-audio/{session_id}/{index}` | Get question as audio (TTS) |
+| `POST` | `/api/interview/transcribe` | Transcribe voice answer via Groq (STT) |
+| `POST` | `/api/interview/submit-answer` | Submit a text or transcribed answer |
+| `POST` | `/api/feedback/evaluate` | Evaluate all answers + generate report |
+| `GET` | `/api/feedback/result/{session_id}` | Re-fetch cached evaluation report |
+
+---
+
 ## ⚙️ Setup & Running Locally
 
 ### 1. Start the Backend
