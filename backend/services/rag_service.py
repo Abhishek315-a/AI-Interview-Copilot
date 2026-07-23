@@ -9,7 +9,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 _embeddings = None
-VECTOR_SIZE = 768  # text-embedding-004 output dimension
+VECTOR_SIZE = 3072  # gemini-embedding-001 output dimension
 
 def get_embeddings():
     global _embeddings
