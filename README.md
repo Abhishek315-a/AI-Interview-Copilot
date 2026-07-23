@@ -16,7 +16,7 @@ An intelligent AI-powered interview preparation platform that helps candidates p
 
 ## 🏗️ System Architecture
 
-```
+```text
 User (Browser)
       │
       ▼
@@ -25,7 +25,8 @@ React Frontend (Vite)
       ▼
 FastAPI Backend
       ├── Resume Parser       → Extracts text from PDF/DOCX
-      ├── RAG Service         → Chunks + embeds resume → ChromaDB
+      ├── RAG Service         → Chunks + embeds resume → Qdrant Cloud Vector DB
+      ├── Session Manager     → Stores session state → Upstash Redis
       ├── Question Chain      → RAG + Groq LLM → Interview questions
       ├── STT Service         → faster-whisper → Voice to text
       ├── TTS Service         → gTTS → Text to speech
@@ -43,38 +44,26 @@ FastAPI Backend
 | **FastAPI** | REST API framework | Async support, automatic Swagger UI, Pydantic validation |
 | **LangChain** | LLM orchestration | Chains, prompt templates, output parsers — makes LLM pipelines clean and composable |
 | **langchain-groq** | Groq LLM integration | Uses `ChatGroq` to connect to Groq's ultra-fast Llama 3.3-70B model |
-| **langchain-core** | Core LangChain primitives | `ChatPromptTemplate`, `JsonOutputParser` — the building blocks |
-| **langchain-community** | Community integrations | `PyPDFLoader`, `Docx2txtLoader`, `Chroma` vector store |
-| **langchain-text-splitters** | Document chunking | `RecursiveCharacterTextSplitter` — splits resume text into optimal chunks for RAG |
-| **langchain-huggingface** | HuggingFace embeddings | `HuggingFaceEmbeddings` — local embedding model, free, no API needed |
+| **Qdrant Cloud** | Vector Database | Free tier vector database to store resume embeddings for RAG |
+| **Upstash Redis** | Session Management | Serverless Redis for keeping track of interview state securely |
 | **sentence-transformers** | Embedding model backend | Powers `all-MiniLM-L6-v2` — lightweight, fast, 384-dim embeddings |
-| **ChromaDB** | Vector database | Stores and retrieves resume embeddings locally; used for RAG retrieval |
-| **pypdf** | PDF parsing | Powers `PyPDFLoader` under the hood |
-| **docx2txt** | DOCX parsing | Powers `Docx2txtLoader` — extracts text from Word documents |
-| **faster-whisper** | Speech-to-Text (STT) | Converts user's voice answer to text; 4x faster than original Whisper, Python 3.13 compatible |
+| **faster-whisper** | Speech-to-Text (STT) | Converts user's voice answer to text; 4x faster than original Whisper |
 | **gTTS** | Text-to-Speech (TTS) | Converts AI-generated questions to audio using Google's TTS API |
-| **pydantic** | Data validation | Request/response schemas, automatic type checking |
-| **python-dotenv** | Environment variables | Loads `.env` file for API keys |
-| **python-multipart** | File uploads | Required by FastAPI to handle `UploadFile` (resume uploads) |
-| **uvicorn** | ASGI server | Runs the FastAPI app with hot reload for development |
+
+### Frontend
+- **React.js (Vite)** — Lightning-fast development server and optimized production build
+- **Axios** — Seamless REST API communication
+- **Vanilla CSS** — Custom beautiful, glassmorphic UI elements and responsive design
+- **React Router** — Seamless client-side routing
 
 ### LLM Provider
-
-| Provider | Model | Role |
-|----------|-------|------|
-| **Groq** | `llama-3.3-70b-versatile` | Generates interview questions and evaluates answers. Chosen for its speed (fastest inference available) and free tier. |
-
-### Embedding Model
-
-| Model | Provider | Dimensions | Why |
-|-------|----------|-----------|-----|
-| `all-MiniLM-L6-v2` | HuggingFace (local) | 384 | Free, runs locally, fast, good semantic similarity for resume text |
+- **Groq** (`llama-3.3-70b-versatile`): Generates interview questions and evaluates answers. Chosen for its speed (fastest inference available) and free tier.
 
 ---
 
 ## 📁 Project Structure
 
-```
+```text
 AI_Interview_Copilot/
 │
 ├── backend/
@@ -86,19 +75,20 @@ AI_Interview_Copilot/
 │   │   ├── interview.py         # Question generation, TTS, STT, answer submission
 │   │   └── feedback.py          # Answer evaluation + final report
 │   │
-│   ├── services/
-│   │   ├── resume_parser.py     # PDF/DOCX → LangChain Document objects
-│   │   ├── rag_service.py       # Chunking, embedding, ChromaDB storage & retrieval
-│   │   ├── question_chain.py    # LangChain chain: RAG + Groq → interview questions
-│   │   ├── eval_chain.py        # LangChain chain: RAG + Groq → per-answer scores + final report
-│   │   ├── tts_service.py       # gTTS: question text → .mp3 audio file
-│   │   └── stt_service.py       # faster-whisper: audio file → transcript text
-│   │
-│   └── models/
-│       └── schemas.py           # Pydantic request/response models
+│   └── services/
+│       ├── resume_parser.py     # PDF/DOCX → LangChain Document objects
+│       ├── rag_service.py       # Chunking, embedding, Qdrant Cloud storage & retrieval
+│       ├── session_manager.py   # Upstash Redis state management
+│       ├── question_chain.py    # LangChain chain: RAG + Groq → interview questions
+│       ├── eval_chain.py        # LangChain chain: RAG + Groq → per-answer scores + final report
+│       ├── tts_service.py       # gTTS: question text → .mp3 audio file
+│       └── stt_service.py       # faster-whisper: audio file → transcript text
 │
-├── frontend/                    # React + Vite (coming soon)
-├── notebooks/                   # Jupyter notebooks for pipeline testing
+├── frontend/                    # React SPA built with Vite
+│   ├── src/                     # Source files (App, API config, Styles)
+│   └── vercel.json              # Vercel configuration for SPA routing
+│
+├── Procfile                     # Deployment configurations for Railway
 ├── .env                         # API keys (not committed to git)
 ├── .gitignore
 └── requirements.txt
@@ -106,134 +96,52 @@ AI_Interview_Copilot/
 
 ---
 
-## 🔄 Pipeline Flow
+## ⚙️ Setup & Running Locally
 
+### 1. Start the Backend
+
+1. Install Python 3.10+
+2. Install dependencies: `pip install -r requirements.txt`
+3. Create a `.env` file in the root directory:
+```env
+GROQ_API_KEY=your_groq_api_key
+QDRANT_URL=your_qdrant_cloud_url
+QDRANT_API_KEY=your_qdrant_api_key
+REDIS_URL=your_upstash_redis_url
+ALLOWED_ORIGINS=http://localhost:5173
 ```
-1. UPLOAD
-   User uploads resume.pdf + job description text
-         ↓
-   PyPDFLoader parses PDF → List[Document]
-         ↓
-   RecursiveCharacterTextSplitter chunks text (500 chars, 50 overlap)
-         ↓
-   all-MiniLM-L6-v2 embeds chunks → 384-dim vectors
-         ↓
-   ChromaDB stores vectors (collection: "resume_{session_id}")
-         ↓
-   session_id returned to frontend
-
-2. GENERATE QUESTIONS
-   Frontend sends session_id + num_questions
-         ↓
-   ChromaDB retrieves 4 most relevant resume chunks (RAG)
-         ↓
-   Groq LLM (Llama 3.3-70B) generates N questions as JSON array
-         ↓
-   Questions stored in session, returned to frontend
-
-3. INTERVIEW SESSION
-   ┌─── TEXT MODE ───────────────────────────────────┐
-   │  Question displayed on screen                   │
-   │  User types answer → POST /submit-answer        │
-   └─────────────────────────────────────────────────┘
-   ┌─── VOICE MODE ──────────────────────────────────┐
-   │  GET /question-audio → gTTS → .mp3 played       │
-   │  User speaks → audio recorded in browser        │
-   │  POST /transcribe → faster-whisper → text       │
-   │  POST /submit-answer with transcribed text      │
-   └─────────────────────────────────────────────────┘
-
-4. EVALUATE
-   All (question, answer) pairs sent to evaluation chain
-         ↓
-   For each pair: ChromaDB retrieves relevant resume context (RAG)
-         ↓
-   Groq LLM scores each answer (1-10) with:
-     - Strengths
-     - What was missing
-     - Ideal answer outline
-         ↓
-   Final report generated:
-     - Overall score
-     - Top 3 strengths
-     - Top 3 improvement areas
-     - Skills gap analysis
-     - Hiring recommendation
-```
-
----
-
-## 🔑 Why RAG?
-
-RAG (Retrieval-Augmented Generation) is used in two critical places:
-
-**Question Generation:** Instead of dumping the entire resume into the prompt (expensive, noisy), RAG retrieves only the 4 most relevant chunks (e.g., "ML skills", "Python projects") so questions are targeted and specific.
-
-**Evaluation:** When scoring an answer about "machine learning experience", RAG fetches the exact ML sections from the resume. The LLM can then compare what the user *said* vs. what they *claimed on the resume* — giving grounded, fair feedback.
-
----
-
-## ⚙️ Setup & Running
-
-### Prerequisites
-- Python 3.10+ (3.13 tested)
-- `uv` package manager (recommended) or `pip`
-- Groq API key → [console.groq.com](https://console.groq.com)
-
-### Installation
-
+4. Run the backend:
 ```bash
-# 1. Clone the repo
-git clone <repo-url>
-cd AI_Interview_Copilot
-
-# 2. Create virtual environment
-uv venv .venv
-.venv\Scripts\activate   # Windows
-
-# 3. Install dependencies
-uv add -r requirements.txt
-
-# 4. Create .env file
-echo GROQ_API_KEY=gsk_your_key_here > .env
-echo HF_HUB_DISABLE_SYMLINKS_WARNING=1 >> .env
-
-# 5. Start the backend
-cd backend
-uvicorn main:app --reload
+uvicorn backend.main:app --reload
 ```
 
-### API Documentation
-Once running, visit: `http://127.0.0.1:8000/docs`
+### 2. Start the Frontend
+
+1. Navigate to the frontend directory: `cd frontend`
+2. Install dependencies: `npm install`
+3. Run the development server: `npm run dev`
+4. Open your browser to `http://localhost:5173`
 
 ---
 
-## 🌐 API Endpoints
+## 🌍 Free-Tier Production Deployment Guide
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/health` | Health check |
-| `POST` | `/api/upload/` | Upload resume + job description |
-| `POST` | `/api/interview/generate-questions` | Generate tailored questions |
-| `GET` | `/api/interview/question-audio/{session_id}/{index}` | Get question as audio (TTS) |
-| `POST` | `/api/interview/transcribe` | Transcribe voice answer (STT) |
-| `POST` | `/api/interview/submit-answer` | Submit a text or transcribed answer |
-| `POST` | `/api/feedback/evaluate` | Evaluate all answers + generate report |
-| `GET` | `/api/feedback/result/{session_id}` | Re-fetch cached evaluation report |
+The app is completely production-ready and optimized for free-tier hosting!
 
----
+### 1. Deploy the Backend (Railway)
+1. Go to [Railway](https://railway.app/) and create a new project from your GitHub repository.
+2. Railway will automatically detect the Python environment and use the `Procfile` to run the app.
+3. In the Railway dashboard, go to the **Variables** tab and paste all variables from your `.env` file (leaving `ALLOWED_ORIGINS` empty for a moment).
+4. Go to **Settings > Networking > Generate Domain**. Copy this domain.
 
-## 🚀 Production Considerations
+### 2. Deploy the Frontend (Vercel)
+1. Go to [Vercel](https://vercel.com/) and import your GitHub repository.
+2. Under "Framework Preset", ensure **Vite** is selected.
+3. Set the **Root Directory** to `frontend`.
+4. In Environment Variables, add `VITE_API_URL` and paste your Railway backend domain (e.g. `https://my-backend.up.railway.app`).
+5. Click **Deploy**.
 
-For production deployment, the following changes are recommended:
+### 3. Finalize Connection
+Take the Vercel URL you were just given (e.g., `https://my-frontend.vercel.app`) and paste it into the `ALLOWED_ORIGINS` environment variable in your Railway dashboard.
 
-- **Session storage**: Replace in-memory dict with **Redis** (Upstash — free tier)
-- **Vector database**: Replace local ChromaDB with **Qdrant Cloud** (free tier)
-- **Server**: Use **Gunicorn** with multiple workers instead of single uvicorn
-- **Voice quality**: Upgrade from gTTS to **ElevenLabs** for realistic voice
-- **Auth**: Add JWT-based authentication
-- **Rate limiting**: Limit LLM API calls per user
-
-Recommended free-tier stack: Railway (backend) + Vercel (frontend) + Upstash (Redis) + Qdrant Cloud (vectors)
-
----
+That's it! Your AI Interview Copilot is fully live on the internet. 🚀
