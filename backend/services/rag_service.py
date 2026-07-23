@@ -16,7 +16,7 @@ def get_embeddings():
     if _embeddings is None:
         logger.info("Loading Google Gemini embeddings...")
         _embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model="models/embedding-001",
             google_api_key=GEMINI_API_KEY
         )
     return _embeddings
