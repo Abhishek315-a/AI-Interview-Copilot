@@ -9,7 +9,7 @@ const features = [
   {
     icon: "🎙️",
     title: "Voice or Text Mode",
-    desc: "Answer by speaking naturally or typing. Our Whisper AI transcribes your voice answer in real-time."
+    desc: "Answer by speaking naturally or typing. Your voice is transcribed instantly and your answer is evaluated just as thoroughly."
   },
   {
     icon: "📊",
@@ -23,8 +23,8 @@ const features = [
   },
   {
     icon: "⚡",
-    title: "Powered by Llama 3.3-70B",
-    desc: "Questions and evaluations run on Groq's ultra-fast inference — responses in seconds, not minutes."
+    title: "Fast, Not Slow",
+    desc: "Interview questions appear in seconds. Evaluations are thorough but snappy — no waiting around for a loading spinner."
   },
   {
     icon: "📝",
@@ -107,8 +107,8 @@ export default function LandingPage() {
           fontSize: "clamp(16px, 2vw, 20px)", color: "var(--text-secondary)",
           maxWidth: 560, margin: "0 auto 48px", lineHeight: 1.7
         }}>
-          Upload your resume. Get personalized interview questions.
-          Practice with voice or text. Receive expert AI feedback with scores and improvement tips.
+          Upload your resume. Get questions built around your actual experience.
+          Speak or type your answers. Walk away knowing exactly where you stand.
         </p>
 
         <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
@@ -213,7 +213,7 @@ export default function LandingPage() {
           Powered by
         </p>
         <div style={{ display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap" }}>
-          {["Groq · Llama 3.3-70B", "LangChain", "RAG · Qdrant", "Whisper · faster-whisper", "FastAPI", "Redis Sessions"].map((t, i) => (
+          {["Groq · Llama 3.3-70B", "LangChain", "RAG · Qdrant", "Groq Whisper API", "Gemini Embeddings", "FastAPI", "Redis Sessions"].map((t, i) => (
             <span key={i} className="badge badge-purple" style={{ fontSize: 13 }}>{t}</span>
           ))}
         </div>
@@ -244,7 +244,7 @@ export default function LandingPage() {
         color: "var(--text-muted)", fontSize: 14
       }}>
         <span>🎤 AI Interview Copilot</span>
-        <span>Built with FastAPI · LangChain · React</span>
+        <span>Built with FastAPI · LangChain · React · Groq</span>
       </footer>
 
     </div>
