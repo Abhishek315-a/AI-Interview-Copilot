@@ -19,4 +19,4 @@ QDRANT_URL      = os.getenv("QDRANT_URL")
 QDRANT_API_KEY  = os.getenv("QDRANT_API_KEY")
 
 # CORS
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",") if o.strip()]
