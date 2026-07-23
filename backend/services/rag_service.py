@@ -1,21 +1,24 @@
 from langchain_qdrant import QdrantVectorStore
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
-from config import QDRANT_URL, QDRANT_API_KEY
+from config import QDRANT_URL, QDRANT_API_KEY, GEMINI_API_KEY
 import logging
 
 logger = logging.getLogger(__name__)
 
 _embeddings = None
-VECTOR_SIZE = 384  # all-MiniLM-L6-v2 output dimension
+VECTOR_SIZE = 768  # text-embedding-004 output dimension
 
 def get_embeddings():
     global _embeddings
     if _embeddings is None:
-        logger.info("Loading HuggingFace embeddings model into RAM...")
-        _embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        logger.info("Loading Google Gemini embeddings...")
+        _embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/text-embedding-004",
+            google_api_key=GEMINI_API_KEY
+        )
     return _embeddings
 
 client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)

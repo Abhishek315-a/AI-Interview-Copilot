@@ -1,23 +1,23 @@
-from faster_whisper import WhisperModel
-
+import os
 import logging
+from groq import Groq
+from config import GROQ_API_KEY
 
 logger = logging.getLogger(__name__)
-_model = None
 
-def get_stt_model():
-    global _model
-    if _model is None:
-        logger.info("Loading Whisper Tiny model into RAM...")
-        _model = WhisperModel("tiny", device="cpu", compute_type="int8")
-    return _model
+# Initialize Groq client
+client = Groq(api_key=GROQ_API_KEY)
 
 def transcribe_audio(audio_file_path: str) -> str:
     """
-    Transcribe audio file to text using faster-whisper.
+    Transcribe audio file to text using Groq's insanely fast Whisper API.
     Supports: wav, mp3, webm, m4a, etc.
     """
-    m = get_stt_model()
-    segments, info = m.transcribe(audio_file_path, beam_size=5)
-    transcript = " ".join([segment.text for segment in segments])
-    return transcript.strip()
+    logger.info(f"Transcribing {audio_file_path} via Groq Whisper API...")
+    with open(audio_file_path, "rb") as file:
+        transcription = client.audio.transcriptions.create(
+            file=(os.path.basename(audio_file_path), file.read()),
+            model="whisper-large-v3",
+            response_format="json",
+        )
+    return transcription.text.strip()

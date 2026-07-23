@@ -28,7 +28,7 @@ FastAPI Backend
       ├── RAG Service         → Chunks + embeds resume → Qdrant Cloud Vector DB
       ├── Session Manager     → Stores session state → Upstash Redis
       ├── Question Chain      → RAG + Groq LLM → Interview questions
-      ├── STT Service         → faster-whisper → Voice to text
+      ├── STT Service         → Groq Whisper API → Voice to text
       ├── TTS Service         → gTTS → Text to speech
       └── Eval Chain          → RAG + Groq LLM → Scores + feedback
 ```
@@ -46,8 +46,8 @@ FastAPI Backend
 | **langchain-groq** | Groq LLM integration | Uses `ChatGroq` to connect to Groq's ultra-fast Llama 3.3-70B model |
 | **Qdrant Cloud** | Vector Database | Free tier vector database to store resume embeddings for RAG |
 | **Upstash Redis** | Session Management | Serverless Redis for keeping track of interview state securely |
-| **sentence-transformers** | Embedding model backend | Powers `all-MiniLM-L6-v2` — lightweight, fast, 384-dim embeddings |
-| **faster-whisper** | Speech-to-Text (STT) | Converts user's voice answer to text; 4x faster than original Whisper |
+| **langchain-google-genai** | Embedding Model | Google Gemini `text-embedding-004` — massive free tier, uses 0 local RAM |
+| **groq** | Speech-to-Text (STT) | Groq Whisper API `whisper-large-v3` — 100x faster than local STT, 0 local RAM |
 | **gTTS** | Text-to-Speech (TTS) | Converts AI-generated questions to audio using Google's TTS API |
 
 ### Frontend
@@ -81,8 +81,8 @@ AI_Interview_Copilot/
 │       ├── session_manager.py   # Upstash Redis state management
 │       ├── question_chain.py    # LangChain chain: RAG + Groq → interview questions
 │       ├── eval_chain.py        # LangChain chain: RAG + Groq → per-answer scores + final report
-│       ├── tts_service.py       # gTTS: question text → .mp3 audio file
-│       └── stt_service.py       # faster-whisper: audio file → transcript text
+│       ├── tts_service.py       # Google Cloud TTS: question text → .mp3 audio file
+│       └── stt_service.py       # Groq Whisper API: audio file → transcript text
 │
 ├── frontend/                    # React SPA built with Vite
 │   ├── src/                     # Source files (App, API config, Styles)
@@ -105,6 +105,7 @@ AI_Interview_Copilot/
 3. Create a `.env` file in the root directory:
 ```env
 GROQ_API_KEY=your_groq_api_key
+GEMINI_API_KEY=your_gemini_api_key
 QDRANT_URL=your_qdrant_cloud_url
 QDRANT_API_KEY=your_qdrant_api_key
 REDIS_URL=your_upstash_redis_url
